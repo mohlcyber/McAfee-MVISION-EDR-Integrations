@@ -1,3 +1,6 @@
+# v.0.0.1 by mohlcyber
+# inspired from McAfee OpenDXL Streaming libraries
+
 import os
 import requests
 import json
