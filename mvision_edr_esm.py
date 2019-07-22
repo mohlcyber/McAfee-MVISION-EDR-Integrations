@@ -95,7 +95,7 @@ class MVISIONEDR():
                 else:
                     for record in res.json()['records']:
                         payload = json.loads(base64.b64decode(record['message']['payload']))
-                        print(payload)
+                        Log().logger(payload)
                         self.send_syslog(json.dumps(payload, separators=(",", ":"), sort_keys=True))
             except Exception as e:
                 Log().logger('Unexpected error during parsing: {}'.format(str(e)))
