@@ -1,3 +1,5 @@
+#Written by mohlcyber v.0.1.
+
 import json
 import socket
 
