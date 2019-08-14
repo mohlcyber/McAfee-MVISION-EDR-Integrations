@@ -19,12 +19,15 @@ Change the MVISION EDR and Syslog details between line 9 and 20 in mvision_edr_t
 
 Change the ServiceNow details between line 10 and 15 in snow.py
 
+<img width="608" alt="Screenshot 2019-08-14 at 15 15 24" src="https://user-images.githubusercontent.com/25227268/63023942-71868280-bea6-11e9-80d4-c9c0e776bb6d.png">
+
+
 ## Execute the script
 
 ```sh
-$ python mvision_edr_activity_feeds.py
+$ python mvision_edr_threats_snow.py
 ```
 
 ## Parsing
 
-I uploaded McAfee ESM parser Threat Events.
+I uploaded McAfee ESM parser for MVISION EDR Threat Events here: [MEDR_Threat_Event.xml](activity-feeds/parser).
