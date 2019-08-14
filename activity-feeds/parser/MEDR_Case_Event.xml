@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nitro_policy esm="D895:3FDA" time="07/24/2019 17:37:02" user="mohl" build="11.1.3 20190212030652" model="ETM-VM8" version="11001003">
+  <rules count="1">
+    <rule>
+      <id>5000145</id>
+      <normid>4026531840</normid>
+      <revision>0</revision>
+      <sid>0</sid>
+      <class>2</class>
+      <message>MVision EDR Case Event</message>
+      <description/>
+      <origin>1</origin>
+      <severity>25</severity>
+      <type>1</type>
+      <action>5</action>
+      <action_initial>5</action_initial>
+      <action_disallowed>0</action_disallowed>
+      <other_bits_default>4</other_bits_default>
+      <other_bits_disallowed>0</other_bits_disallowed>
+      <text><![CDATA[any any any -> any any (msg:"MVision EDR Case Event";adsid:777;content:"EDR[";json;pcre:"\{.*\"entity\":\s*\"case\".*\}";var@{AppID}:${origin};var@{Description}:${case.name};var@{Elapsed_Time}:${investigation-time.elapsed-time};var@{Event_Class}:${nature};var@{firsttime,lasttime}:${timestamp};var@{Service_Name}:${type};var@{session_id}:${id};var@{sigdesc}:${entity}"_"${type};var@{UserIDSrc}:${user};var@{Source_Logon_ID}:${tenant-id};var@{URL}:${case.url};fmt@{firsttime, lasttime}:"%Y-%m-%dT%H:%M:%SZ";)]]></text>
+    </rule>
+  </rules>
+</nitro_policy>

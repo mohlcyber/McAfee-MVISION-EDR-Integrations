@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nitro_policy esm="D895:3FDA" time="07/24/2019 17:37:28" user="mohl" build="11.1.3 20190212030652" model="ETM-VM8" version="11001003">
+  <rules count="1">
+    <rule>
+      <id>5000001</id>
+      <normid>805306368</normid>
+      <revision>0</revision>
+      <sid>0</sid>
+      <class>2</class>
+      <message>MVision EDR Threat detected</message>
+      <description>MVISION EDR threat detected</description>
+      <origin>1</origin>
+      <severity>50</severity>
+      <type>1</type>
+      <action>5</action>
+      <action_initial>5</action_initial>
+      <action_disallowed>0</action_disallowed>
+      <other_bits_default>4</other_bits_default>
+      <other_bits_disallowed>0</other_bits_disallowed>
+      <text><![CDATA[any any any -> any any (msg:"MVision EDR Threat detected";adsid:777;content:"EDR[";json;pcre:"\{.*\"entity\":\s*\"threat\".*\}";var@{action}:${entity};var@{Confidence}:${threat.rank};var@{Creator_Name}:${tenant-id};var@{File_Path}:${threat.threatAttrs.path};var@{Filename}:${threat.threatAttrs.name};var@{firsttime,lasttime}:${threat.detectionDate};var@{Hash}:${threat.threatAttrs.md5};var@{Job_Name}:${transaction-id};var@{Message_Text}:${threat.eventType}" for "${threat.threatType}":"${threat.threatAttrs.name};var@{Object_Type}:${threat.threatType};var@{severity}:${threat.severity};var@{SHA1}:${threat.threatAttrs.sha1};var@{SHA256}:${threat.threatAttrs.sha256};var@{sigdesc}:${threat.threatType}"_based_theat_detection";var@{sigid}:${threat.threatType}"_"${nature}"_"${entity};var@{src_guid}:${threat.maGuid};var@{UserIDSrc}:${user};fmt@{firsttime, lasttime}:"%Y-%m-%dT%H:%M:%S.%.3f";map@action:"alert"="5";map@severity:"s0"="25","s1"="25","s2"="50","s3"="50","s4"="75","s5"="75";)]]></text>
+      <tag origin="0">1310720</tag>
+    </rule>
+  </rules>
+</nitro_policy>
