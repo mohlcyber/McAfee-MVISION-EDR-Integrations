@@ -4,4 +4,4 @@ This is a collection of different McAfee MVISION EDR integration scripts. This i
 
 [McAfee MVISION EDR Activity Feeds Script](README_Activity_Feeds.md)
 
-McAfee MVISION EDR RemoveFiles Script
+[McAfee MVISION EDR RemoveFiles Script](README_Remove_File.md)
