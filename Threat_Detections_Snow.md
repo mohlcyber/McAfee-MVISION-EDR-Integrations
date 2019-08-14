@@ -9,7 +9,7 @@ The script requires the dxlstreaming client libraries. To install these librarie
 $ pip install dxlstreamingclient
 ```
 
-[Download the scripts](threat_detections_snow)
+[Download the scripts here](threat_detections_snow)
 
 ## Configuration
 
