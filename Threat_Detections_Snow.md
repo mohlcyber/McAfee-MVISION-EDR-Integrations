@@ -13,20 +13,18 @@ $ pip install dxlstreamingclient
 
 ## Configuration
 
-Change the MVISION EDR and Syslog details between line 9 and 20 in mvision_edr_threats_snow.py.
+Change the MVISION EDR, ServiceNow and Syslog details between line 12 and 25 in mvision_edr_threats_snow.py.
 
-<img width="523" alt="Screenshot 2019-07-31 at 16 41 43" src="https://user-images.githubusercontent.com/25227268/62221556-1d61a580-b3b2-11e9-979b-bd153a74d858.png">
-
-Change the ServiceNow details between line 10 and 15 in snow.py
-
-<img width="608" alt="Screenshot 2019-08-14 at 15 15 24" src="https://user-images.githubusercontent.com/25227268/63023942-71868280-bea6-11e9-80d4-c9c0e776bb6d.png">
-
+<img width="470" alt="Screenshot 2019-08-15 at 09 59 08" src="https://user-images.githubusercontent.com/25227268/63081209-5b7acf80-bf43-11e9-8a00-36778e75fd9e.png">
 
 ## Execute the script
 
 ```sh
 $ python mvision_edr_threats_snow.py
 ```
+
+The script will map the severity to the ServieNow mapping. This is just an example and can be changed.
+<img width="1439" alt="Screenshot 2019-08-15 at 09 47 47" src="https://user-images.githubusercontent.com/25227268/63080935-9defdc80-bf42-11e9-8473-95ddbba011e1.png">
 
 ## Parsing
 
