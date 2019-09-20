@@ -9,8 +9,6 @@ The script requires the dxlstreaming client libraries. To install these librarie
 $ pip install dxlstreamingclient
 ```
 
-[Download the scripts here](threat_detections_snow)
-
 ## Configuration
 
 Change the MVISION EDR, ServiceNow and Syslog details between line 12 and 25 in mvision_edr_threats_snow.py.
