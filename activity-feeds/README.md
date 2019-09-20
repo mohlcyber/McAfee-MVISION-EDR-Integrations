@@ -9,9 +9,6 @@ The script requires the dxlstreaming client libraries. To install these librarie
 $ pip install dxlstreamingclient
 ```
 
-Download the script:
-[mvision_edr_activity_feeds.py](activity-feeds)
-
 ## Configuration
 
 Change the MVISION EDR and Syslog details between line 9 and 20.
