@@ -2,7 +2,7 @@
 
 This is a collection of different McAfee MVISION EDR integration scripts. This includes:
 
-[McAfee MVISION EDR Activity Feeds Script](Activity_Feeds.md): 
+[McAfee MVISION EDR Activity Feeds Script](activity-feeds): 
 This is a script to consume activity feeds from MVISION EDR. Further the script will ingest the Activity Feed into a Syslog Server.
 
 [McAfee MVISION EDR RemoveFiles Script](remove-file): 
