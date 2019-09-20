@@ -10,3 +10,6 @@ This is a script that will search for systems based on a specific hash and will 
 
 [McAfee MVISION EDR Threat Detections to ServiceNow](threat_detections_snow):
 This is a script to consume threat detections from MVISION EDR and create new cases in ServiceNow as well as ingest the data into a Syslog Server.
+
+[McAfee MVISION EDR Historical Search](history_search):
+This is a script to query the historical data store in MVISION EDR.The script requires a hostname, search type, days and a limit to query the historical data store.
