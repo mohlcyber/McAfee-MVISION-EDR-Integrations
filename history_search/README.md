@@ -5,6 +5,6 @@ This is a script to query the historical data store in MVISION EDR. The script r
 Usage:
 
 ```sh
-$ python python mvision_edr_hist_search.py -U <USERNAME> -P <PASSWORD> -H <HOSTNAME>
+python python mvision_edr_hist_search.py -U <USERNAME> -P <PASSWORD> -H <HOSTNAME>
 
 ```
