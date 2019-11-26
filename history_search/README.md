@@ -9,12 +9,12 @@ The search type should include one of the following:
 Usage:
 
 ```sh
-python mvision_edr_hist_search.py -U <USERNAME> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>
+python mvision_edr_hist_search.py -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>
 
 ```
 
 Example:
 
 ```sh
-python mvision_edr_hist_search.py -U username@test.com -H hostname -T DNSQuery -D 1 -L 20
+python mvision_edr_hist_search.py -U username@test.com -P password -H hostname -T DNSQuery -D 1 -L 20
 ```
