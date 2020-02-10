@@ -12,7 +12,7 @@ pip install dxlstreamingclient
 ## Execute the script
 
 ```sh
-python mvision_edr_activity_feeds.py -U <USERNAME> -P <PASSWORD> -S <SYSLOG IP> -SP <SYSLOG PORT>
+python3.7 mvision_edr_activity_feeds.py -U <USERNAME> -P <PASSWORD> -S <SYSLOG IP> -SP <SYSLOG PORT>
 
 ```
 
