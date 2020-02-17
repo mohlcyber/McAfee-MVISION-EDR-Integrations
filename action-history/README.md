@@ -12,5 +12,5 @@ python mvision_edr_action_history.py -U <USERNAME> -P <PASSWORD> -L <MAX RESULTS
 Example:
 
 ```sh
-python mvision_edr_hist_search.py -U username@test.com -P password -L 20
+python mvision_edr_action_history.py -U username@test.com -P password -L 20
 ```
