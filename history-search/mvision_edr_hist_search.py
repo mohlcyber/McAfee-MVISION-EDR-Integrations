@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.2 (26.11.2019)
+# Written by mohlcyber v.0.3 (04.09.2020)
 # Script to query historical data
-# Changelog: added getpass to avoid pw visibility in bash history (thx to secufred)
 
 import sys
 import getpass
 import argparse
 import requests
 import json
+import time
 
 from datetime import datetime, timedelta
 
 
 class EDR():
     def __init__(self):
-        self.base_url = 'https://api.soc.mcafee.com'
+        if args.region == 'EU':
+            self.base_url = 'https://api.soc.eu-central-1.mcafee.com'
+        elif args.region == 'US':
+            self.base_url = 'https://api.soc.mcafee.com'
+
         self.verify = True
         self.request = requests.Session()
 
@@ -28,6 +32,8 @@ class EDR():
         self.limit = args.limit
         self.type = args.type
 
+        self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
+
     def auth(self, creds):
         r = requests.get(self.base_url + '/identity/v1/login', auth=creds)
         res = r.json()
@@ -38,6 +44,7 @@ class EDR():
             print('AUTHENTICATION: Successfully authenticated.')
         else:
             print('ERROR: Something went wrong during the authentication')
+            sys.exit()
 
     def get_host(self):
         try:
@@ -63,8 +70,8 @@ class EDR():
 
     def hist_search(self):
         try:
-            t_now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-            t_before = (datetime.now() - timedelta(days=self.days)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            t_now = datetime.now().strftime(self.pattern)
+            t_before = (datetime.now() - timedelta(days=self.days)).strftime(self.pattern)
 
             query = {
               "$filter": {
@@ -92,34 +99,98 @@ class EDR():
                                    .format(json.dumps(query), self.limit),
                                     headers=self.headers)
 
-            print(res.json())
+            if res.status_code != 200:
+                print('ERROR: edr.detect_search - {0} - {1}'.format(str(res.status_code), res.text))
+            else:
+                print(res.json())
 
-        except Exception as e:
-            print('ERROR: Something went wrong in edr.hist_search. Error: {}'.format(str(e)))
+        except Exception as error:
+            print('ERROR: Something went wrong in edr.hist_search. Error: {}'.format(str(error)))
+
+    def detect_search(self):
+        try:
+            t_now = datetime.now().strftime(self.pattern)
+            t_before = (datetime.now() - timedelta(days=self.days)).strftime(self.pattern)
+
+            epoch_now = int(time.mktime(time.strptime(t_now, self.pattern)))
+            epoch_before = int(time.mktime(time.strptime(t_before, self.pattern)))
+
+            filter = {
+                "maGuid": self.get_host()
+            }
+
+            severities = ["s1", "s2", "s3", "s4", "s5"]
+            if self.type == 'DetectionsAlerts':
+                severities.append('s0')
+
+            filter['severities'] = severities
+
+            res = self.request.get(self.base_url + '/mvm/api/v1/middleware/detections?sort=-eventDate&filter={0}&from={1}&to={2}&skip=0&limit={3}&externalOffset=0'
+                                   .format(json.dumps(filter), str(epoch_before*1000), str(epoch_now*1000), self.limit),
+                                   headers=self.headers)
+
+            if res.status_code != 200:
+                print('ERROR: edr.detect_search - {0} - {1}'.format(str(res.status_code), res.text))
+            else:
+                print(res.json())
+
+        except Exception as error:
+            print('ERROR: Something went wrong in edr.detect_search. Error: {}'.format(str(error)))
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_hist_search.py -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>"""
+    usage = """python mvision_edr_hist_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>"""
     title = 'McAfee EDR Python API'
     parser = argparse.ArgumentParser(description=title)
-    parser.add_argument('--user', '-U', required=True, type=str)
-    parser.add_argument('--password', '-P', required=False, type=str)
-    parser.add_argument('--hostname', '-H', required=True, type=str)
-    parser.add_argument('--type', '-T', required=True, type=str)
-    parser.add_argument('--days', '-D', required=True, type=int)
-    parser.add_argument('--limit', '-L', required=True, type=int)
+
+    parser.add_argument('--region', '-R',
+                        required=True, type=str,
+                        help='MVISION EDR Tenant Location', choices=['EU', 'US'])
+
+    parser.add_argument('--user', '-U',
+                        required=True, type=str,
+                        help='MVISION EDR Username')
+
+    parser.add_argument('--password', '-P',
+                        required=False, type=str,
+                        help='MVISION EDR Password')
+
+    parser.add_argument('--hostname', '-H',
+                        required=True, type=str,
+                        help='Hostname to Query')
+
+    parser.add_argument('--type', '-T',
+                        required=True, type=str,
+                        help='Search Type', choices=[
+                            'ProcessCreated',
+                            'PECreated',
+                            'ScriptCreated',
+                            'AdminHackingToolExecuted',
+                            'ServiceChanged',
+                            'NetworkConnection',
+                            'ASEPCreatedOrModified',
+                            'DNSQuery',
+                            'LoadedDLLs',
+                            'UserAccounts',
+                            'DetectionsAlerts',
+                            'Alerts']
+                        )
+
+    parser.add_argument('--days', '-D',
+                        required=True, type=int,
+                        help='How many days back to query')
+
+    parser.add_argument('--limit', '-L',
+                        required=True, type=int,
+                        help='Limit')
 
     args = parser.parse_args()
     if not args.password:
         args.password = getpass.getpass()
 
-    type_list = ['ProcessCreated', 'PECreated', 'ScriptCreated', 'AdminHackingToolExecuted', 'ServiceChanged',
-                 'NetworkConnection', 'ASEPCreatedOrModified', 'DNSQuery', 'LoadedDLLs', 'UserAccounts']
-
-    if args.type not in type_list:
-        print('ERROR: Type is not correctley defined. Type should include on if the following: \n {}'
-              .format(str(type_list)))
-        sys.exit()
-
     edr = EDR()
-    edr.hist_search()
+
+    if args.type == 'DetectionsAlerts' or args.type == 'Alerts':
+        edr.detect_search()
+    else:
+        edr.hist_search()
