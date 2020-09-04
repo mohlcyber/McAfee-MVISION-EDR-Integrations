@@ -4,17 +4,17 @@ This is a script to query the historical data store in MVISION EDR. The script r
 
 The search type should include one of the following:
 
-['ProcessCreated', 'PECreated', 'ScriptCreated', 'AdminHackingToolExecuted', 'ServiceChanged', 'NetworkConnection', 'ASEPCreatedOrModified', 'DNSQuery', 'LoadedDLLs', 'UserAccounts']
+['ProcessCreated', 'PECreated', 'ScriptCreated', 'AdminHackingToolExecuted', 'ServiceChanged', 'NetworkConnection', 'ASEPCreatedOrModified', 'DNSQuery', 'LoadedDLLs', 'UserAccounts', 'DetectionsAlerts', 'Alerts']
 
 Usage:
 
 ```sh
-python mvision_edr_hist_search.py -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>
+python mvision_edr_hist_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <SEARCHTYPE> -D <DAYS> -L <MAX RESULTS>
 
 ```
 
 Example:
 
 ```sh
-python mvision_edr_hist_search.py -U username@test.com -P password -H hostname -T DNSQuery -D 1 -L 20
+python mvision_edr_hist_search.py -R EU -U username@test.com -P password -H hostname -T DNSQuery -D 1 -L 20
 ```
