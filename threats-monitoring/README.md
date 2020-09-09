@@ -13,5 +13,5 @@ python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -DT <DETAI
 Example:
 
 ```sh
-python mvision_edr_action_history.py -R EU -U username@test.com -D 3 -L 100
+python mvision_edr_threats.py -R EU -U username@test.com -D 3 -L 100
 ```
