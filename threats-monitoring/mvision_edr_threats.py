@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.1 (09.09.2020)
+# Written by mohlcyber v.0.2 (14.09.2020)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -15,9 +15,9 @@ from datetime import datetime, timedelta
 class EDR():
     def __init__(self):
         if args.region == 'EU':
-            self.base_url = 'https://api.soc.eu-central-1.mcafee.com'
+            self.base_url = 'soc.eu-central-1.mcafee.com'
         elif args.region == 'US':
-            self.base_url = 'https://api.soc.mcafee.com'
+            self.base_url = 'soc.mcafee.com'
             
         self.verify = True
         self.request = requests.Session()
@@ -35,7 +35,7 @@ class EDR():
 
     def auth(self, creds):
         try:
-            res = self.request.get(self.base_url + '/identity/v1/login', auth=creds)
+            res = self.request.get('https://api.' + self.base_url + '/identity/v1/login', auth=creds)
 
             if res.ok:
                 token = res.json()['AuthorizationToken']
@@ -57,7 +57,7 @@ class EDR():
             severities = ["s0", "s1", "s2", "s3", "s4", "s5"]
             filter['severities'] = severities
 
-            res = self.request.get(self.base_url + '/ft/api/v2/ft/threats?sort=-rank&filter={0}&from={1}&limit={2}'
+            res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats?sort=-rank&filter={0}&from={1}&limit={2}'
                                    .format(json.dumps(filter), str(epoch_before*1000), str(self.limit)),
                                    headers=self.headers)
 
@@ -69,6 +69,8 @@ class EDR():
                 if self.details == 'True':
                     for threat in res['threats']:
                         detections = self.get_detections(threat['id'])
+                        threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}'\
+                            .format(threat['id'])
                         threat['detections'] = detections
 
                 print(json.dumps(res))
@@ -82,7 +84,7 @@ class EDR():
 
     def get_detections(self, threatid):
         try:
-            res = self.request.get(self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
+            res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
                                    .format(threatid), headers=self.headers)
 
             if res.ok:
