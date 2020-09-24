@@ -164,6 +164,7 @@ if __name__ == '__main__':
                         help='Search Type', choices=[
                             'ProcessCreated',
                             'PECreated',
+                            'ArchiveCreated',
                             'ScriptCreated',
                             'AdminHackingToolExecuted',
                             'ServiceChanged',
