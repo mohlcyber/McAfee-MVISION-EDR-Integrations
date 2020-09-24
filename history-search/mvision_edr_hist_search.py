@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.3 (04.09.2020)
+# Written by mohlcyber v.0.4 (24.09.2020)
 # Script to query historical data
 
 import sys
@@ -167,12 +167,15 @@ if __name__ == '__main__':
                             'ArchiveCreated',
                             'ScriptCreated',
                             'AdminHackingToolExecuted',
+                            'ASEPCreatedOrModified',
                             'ServiceChanged',
                             'NetworkConnection',
-                            'ASEPCreatedOrModified',
                             'DNSQuery',
+                            'ScheduledTaskRegistered',
+                            'LoginLogout',
                             'LoadedDLLs',
                             'UserAccounts',
+                            'WMIActivity',
                             'DetectionsAlerts',
                             'Alerts']
                         )
