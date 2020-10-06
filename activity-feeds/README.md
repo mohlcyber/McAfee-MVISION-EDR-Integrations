@@ -2,6 +2,7 @@
 
 This is a script to consume activity feeds from MVISION EDR. 
 The script contains various modules to ingest trace data into e.g. ServiceNow, TheHive, Syslog or Email.
+Further it provides an optional function to enrich the maGuid with EPO data like Hostname, Name, IP Address and assigned Tags.
 
 ## Prerequisites
 
@@ -13,7 +14,7 @@ pip install dxlstreamingclient
 ## Execute the script
 
 ```sh
-usage: python mvision_edr_activity_feeds.py -R <REGION> -U <USERNAME> -L <LOGLEVEL>
+usage: python mvision_edr_activity_feeds.py -h
 
 McAfee EDR Activity Feeds
 
@@ -42,7 +43,12 @@ optional arguments:
                         -C url=<URL to SNOW Instance> -C user=<SNOW User> -C pw=<SNOW PW>
                          
   --loglevel {critical,error,warning,info,debug,notset}, -L {critical,error,warning,info,debug,notset}
-
+  --enrich {True,False}
+                        Enrich MAGUID with EPO
+  --epo-ip EPO_IP       ePO Server IP or hostname
+  --epo-port EPO_PORT   ePO Server Port
+  --epo-user EPO_USER   ePO Server User
+  --epo-pwd EPO_PWD     ePO Server Password
 ```
 
 ## Parsing
