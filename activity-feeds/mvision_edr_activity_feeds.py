@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.4 (15.04.2020)
+# Written by mohlcyber v.0.5 (06.10.2020)
 
 import sys
 import getpass
 import json
 import logging
+import requests
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from dxlstreamingclient.channel import Channel, ChannelAuth
+
+requests.packages.urllib3.disable_warnings()
 
 # Topics to subscribe: 'case-mgmt-events', 'BusinessEvents', 'threatEvents'
 TOPICS = ['threatEvents']
@@ -23,7 +26,10 @@ class EDR():
         self.pw = args.password
         self.auth = ChannelAuth(self.url, self.user, self.pw, verify_cert_bundle='')
 
+        self.enrich = args.enrich
         loglevel = args.loglevel
+
+        self.buffer = {}
 
         logging.basicConfig(level=getattr(logging, loglevel.upper(), None))
         logger = logging.getLogger()
@@ -39,12 +45,52 @@ class EDR():
                 def process_callback(payloads):
                     if not payloads == []:
                         for payload in payloads:
+
+                            if self.enrich == 'True':
+                                payload = self.epo_enrich(payload)
+
                             print('Event received: {0}'.format(json.dumps(payload)))
                             if args.module:
                                 self.run_modules(payload)
                     return True
 
                 channel.run(process_callback, wait_between_queries=5, topics=TOPICS)
+
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print("ERROR: Error in {location}.{funct_name}() - line {line_no} : {error}"
+                  .format(location=__name__, funct_name=sys._getframe().f_code.co_name, line_no=exc_tb.tb_lineno,
+                          error=str(e)))
+
+    def epo_enrich(self, payload):
+        try:
+            if 'threat' in payload:
+                maGuid = payload['threat']['maGuid']
+                if maGuid not in self.buffer:
+                    data = EPO().request('system.find', data={'searchText': maGuid})
+                    if data is not None:
+                        print('INFO: Going to enrich maGuid {}.'.format(maGuid))
+                        for hostinfo in data:
+                            tmp_buffer = []
+                            payload['threat']['maHostname'] = hostinfo['EPOComputerProperties.IPHostName']
+                            tmp_buffer.append(hostinfo['EPOComputerProperties.IPHostName'])
+                            payload['threat']['maName'] = hostinfo['EPOComputerProperties.ComputerName']
+                            tmp_buffer.append(hostinfo['EPOComputerProperties.ComputerName'])
+                            payload['threat']['maIP'] = hostinfo['EPOComputerProperties.IPAddress']
+                            tmp_buffer.append(hostinfo['EPOComputerProperties.IPAddress'])
+                            payload['threat']['maTags'] = hostinfo['EPOLeafNode.Tags']
+                            tmp_buffer.append(hostinfo['EPOLeafNode.Tags'])
+                            self.buffer[maGuid] = tmp_buffer
+                    else:
+                        print('INFO: Could not enrich maGuid {0}. EPO Bad Response'.format(maGuid))
+                else:
+                    print('INFO: Data for enrichment already in buffer for maGuid {0}.'.format(maGuid))
+                    payload['threat']['maHostname'] = self.buffer[maGuid][0]
+                    payload['threat']['maName'] = self.buffer[maGuid][1]
+                    payload['threat']['maIP'] = self.buffer[maGuid][2]
+                    payload['threat']['maTags'] = self.buffer[maGuid][3]
+
+            return payload
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -69,9 +115,42 @@ class EDR():
                           error=str(e)))
 
 
+class EPO():
+
+    def __init__(self):
+        self.epo_ip = args.epo_ip
+        self.epo_port = str(args.epo_port)
+        self.epo_user = args.epo_user
+        self.epo_pwd = args.epo_pwd
+
+        self.session = requests.Session()
+
+    def request(self, option, **kwargs):
+        try:
+            hostinfo = None
+            kwargs.setdefault('auth', (self.epo_user, self.epo_pwd))
+            kwargs.setdefault('verify', False)
+            kwargs.setdefault('params', {})
+            kwargs['params'][':output'] = 'json'
+
+            url = 'https://{0}:{1}/remote/{2}'.format(self.epo_ip, self.epo_port, option)
+
+            res = self.session.post(url, **kwargs)
+            if res.ok and res.text.startswith('OK:'):
+                hostinfo = json.loads(res.text[3:])
+
+            return hostinfo
+
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print("ERROR: Error in {location}.{funct_name}() - line {line_no} : {error}"
+                  .format(location=__name__, funct_name=sys._getframe().f_code.co_name, line_no=exc_tb.tb_lineno,
+                          error=str(e)))
+
+
 if __name__ == "__main__":
 
-    usage = """python mvision_edr_activity_feeds.py -R <REGION> -U <USERNAME> -L <LOGLEVEL>"""
+    usage = """python mvision_edr_activity_feeds.py -h"""
     title = 'McAfee EDR Activity Feeds'
     parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
@@ -114,9 +193,28 @@ if __name__ == "__main__":
                         default='info', choices=['critical', 'error', 'warning',
                                  'info', 'debug', 'notset'])
 
+    parser.add_argument('--enrich', required=False,
+                        type=str, help='Enrich MAGUID with EPO',
+                        default='False', choices=['True', 'False'])
+
+    parser.add_argument('--epo-ip', type=str,
+                        required=False, help='ePO Server IP or hostname')
+
+    parser.add_argument('--epo-port', type=int,
+                        default=8443, required=False,
+                        help='ePO Server Port')
+
+    parser.add_argument('--epo-user', type=str,
+                        required=False, help='ePO Server User')
+
+    parser.add_argument('--epo-pwd', type=str,
+                        required=False, help='ePO Server Password')
+
     args = parser.parse_args()
     if not args.password:
         args.password = getpass.getpass(prompt='MVISION EDR Password:')
+    if not args.epo_pwd:
+        args.epo_pwd = getpass.getpass(prompt='McAfee ePO Password:')
 
     edr = EDR()
     edr.activity_feed()
