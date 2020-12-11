@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.2 (14.09.2020)
+# Written by mohlcyber v.0.3 (11.12.2020)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -39,7 +39,7 @@ class EDR():
 
             if res.ok:
                 token = res.json()['AuthorizationToken']
-                self.headers = {'Authorization': 'Bearer {}'.format(token)}
+                self.request.headers = {'Authorization': 'Bearer {}'.format(token)}
                 print('AUTHENTICATION: Successfully authenticated')
             else:
                 print('ERROR: Something went wrong during the authentication. Error: {0} - {1}'
@@ -58,8 +58,7 @@ class EDR():
             filter['severities'] = severities
 
             res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats?sort=-rank&filter={0}&from={1}&limit={2}'
-                                   .format(json.dumps(filter), str(epoch_before*1000), str(self.limit)),
-                                   headers=self.headers)
+                                   .format(json.dumps(filter), str(epoch_before*1000), str(self.limit)))
 
             if res.ok:
                 print('SUCCESS: Successful retrieved threats.')
@@ -68,10 +67,19 @@ class EDR():
 
                 if self.details == 'True':
                     for threat in res['threats']:
+                        # Enrich with detections
                         detections = self.get_detections(threat['id'])
                         threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}'\
                             .format(threat['id'])
                         threat['detections'] = detections
+
+                        # Enrich with trace
+                        for detection in threat['detections']['detections']:
+                            maGuid = detection['host']['maGuid']
+                            traceId = detection['traceId']
+
+                            traces = self.get_trace(maGuid, traceId)
+                            detection['traces'] = traces
 
                 print(json.dumps(res))
             else:
@@ -85,7 +93,7 @@ class EDR():
     def get_detections(self, threatid):
         try:
             res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
-                                   .format(threatid), headers=self.headers)
+                                   .format(threatid))
 
             if res.ok:
                 return res.json()
@@ -96,6 +104,22 @@ class EDR():
 
         except Exception as error:
             print('ERROR: Something went wrong in edr.get_threatdetections. Error: {}'.format(str(error)))
+
+    def get_trace(self, maGuid, traceId):
+        try:
+            res = self.request.get('https://api.' + self.base_url +
+                                   '/historical/api/v1/traces/main-activity-by-trace-id?maGuid={0}&traceId={1}'
+                                   .format(maGuid, traceId))
+
+            if res.ok:
+                return(res.json())
+            else:
+                print('ERROR: Something went wrong in retrieving trace data. Error: {0} - {1}'
+                      .format(str(res.status_code), res.text))
+                sys.exit()
+
+        except Exception as error:
+            print('ERROR: Something went wrong in edr.get_trace. Error: {}'.format(str(error)))
 
 
 if __name__ == '__main__':
