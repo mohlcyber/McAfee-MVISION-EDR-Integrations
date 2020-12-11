@@ -2,7 +2,7 @@
 
 This is a script to retrieve the threat detections from MVISION EDR (Monitoring Dashboard). The script requires a username, password, details (True/False), days and a limit to query the threats.
 
-Further the script allows to retrieve additional details about the threat itself (-DT / --details flag). This includes the detections and affected systems. 
+Further the script allows to retrieve additional details about the threat itself (-DT / --details flag). This includes the detections and traces of the affected systems. 
 
 Usage:
 
