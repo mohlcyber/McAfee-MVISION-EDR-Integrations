@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.5 (06.10.2020)
+# Written by mohlcyber v.0.6 (12.01.2021)
 
 import sys
 import getpass
@@ -22,6 +22,8 @@ class EDR():
             self.url = 'https://api.soc.eu-central-1.mcafee.com/'
         elif args.region == 'US':
             self.url = 'https://api.soc.mcafee.com/'
+        elif args.region == 'SY':
+            self.url = 'https://api.ap-southeast-2.soc.mcafee.com/'
         self.user = args.user
         self.pw = args.password
         self.auth = ChannelAuth(self.url, self.user, self.pw, verify_cert_bundle='')
@@ -156,7 +158,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--region', '-R',
                         required=True, type=str,
-                        help='MVISION EDR Tenant Location', choices=['EU', 'US'])
+                        help='MVISION EDR Tenant Location', choices=['EU', 'US', 'SY'])
 
     parser.add_argument('--user', '-U',
                         required=True, type=str,
