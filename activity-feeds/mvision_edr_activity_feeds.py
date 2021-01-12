@@ -23,7 +23,7 @@ class EDR():
         elif args.region == 'US':
             self.url = 'https://api.soc.mcafee.com/'
         elif args.region == 'SY':
-            self.url = 'https://api.ap-southeast-2.soc.mcafee.com/'
+            self.url = 'https://api.soc.ap-southeast-2.mcafee.com/'
         self.user = args.user
         self.pw = args.password
         self.auth = ChannelAuth(self.url, self.user, self.pw, verify_cert_bundle='')
