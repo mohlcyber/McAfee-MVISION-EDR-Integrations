@@ -181,6 +181,7 @@ if __name__ == '__main__':
                             'LoadedDLLs',
                             'UserAccounts',
                             'WMIActivity',
+                            'EPP_Response',
                             'DetectionsAlerts',
                             'Alerts']
                         )
