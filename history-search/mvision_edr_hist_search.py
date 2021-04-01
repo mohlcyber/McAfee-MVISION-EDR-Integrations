@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.4 (24.09.2020)
+# Written by mohlcyber v.0.5 (01.04.2021)
 # Script to query historical data
 
 import sys
@@ -18,6 +18,8 @@ class EDR():
             self.base_url = 'https://api.soc.eu-central-1.mcafee.com'
         elif args.region == 'US':
             self.base_url = 'https://api.soc.mcafee.com'
+        elif args.region == 'SY':
+            self.base_url = 'https://api.soc.ap-southeast-2.mcafee.com'
 
         self.verify = True
         self.request = requests.Session()
@@ -145,7 +147,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--region', '-R',
                         required=True, type=str,
-                        help='MVISION EDR Tenant Location', choices=['EU', 'US'])
+                        help='MVISION EDR Tenant Location', choices=['EU', 'US', 'SY'])
 
     parser.add_argument('--user', '-U',
                         required=True, type=str,
@@ -162,10 +164,13 @@ if __name__ == '__main__':
     parser.add_argument('--type', '-T',
                         required=True, type=str,
                         help='Search Type', choices=[
+                            'APICall',
                             'ProcessCreated',
                             'PECreated',
+                            'NonPECreated',
                             'ArchiveCreated',
                             'ScriptCreated',
+                            'ScriptExecuted',
                             'AdminHackingToolExecuted',
                             'ASEPCreatedOrModified',
                             'ServiceChanged',
