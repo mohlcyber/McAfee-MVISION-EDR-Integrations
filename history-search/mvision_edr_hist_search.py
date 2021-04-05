@@ -4,12 +4,12 @@
 
 import sys
 import getpass
-import argparse
 import requests
 import json
 import time
 import logging
 
+from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime, timedelta
 
 
@@ -158,10 +158,9 @@ class EDR():
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_hist_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> """\
-            """-T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>"""
+    usage = """python mvision_edr_hist_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>"""
     title = 'McAfee EDR Python API'
-    parser = argparse.ArgumentParser(description=title)
+    parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('--region', '-R',
                         required=True, type=str,
