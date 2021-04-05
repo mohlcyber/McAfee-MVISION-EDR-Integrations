@@ -117,7 +117,7 @@ class EDR():
                                    headers=self.headers)
 
             if res.status_code != 200:
-                self.logger.error('edr.detect_search - {0} - {1}'.format(str(res.status_code), res.text))
+                self.logger.error('edr.hist_search - {0} - {1}'.format(str(res.status_code), res.text))
             else:
                 self.logger.info(res.json())
                 self.logger.info('Found {0} items.'.format(res.json()['count']))
