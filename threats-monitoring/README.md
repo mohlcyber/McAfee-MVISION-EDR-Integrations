@@ -7,7 +7,7 @@ Further the script allows to retrieve additional details about the threat itself
 Usage:
 
 ```sh
-usage: python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -H <HOURS> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>
+usage: python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -M <MINUTES> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>
 
 McAfee EDR Python API
 
@@ -20,13 +20,12 @@ optional arguments:
                         MVISION EDR Password
   --details {True,False}, -D {True,False}
                         Enrich threat information with trace data
-  --hours HOURS, -H HOURS
-                        Timeframe to pull data in hours
+  --minutes MINUTES, -M MINUTES
+                        Timeframe to pull data in minutes
   --limit LIMIT, -L LIMIT
                         Maximum number of returned items
   --syslog-ip SYSLOG_IP, -S SYSLOG_IP
                         Syslog IP Address
   --syslog-port SYSLOG_PORT, -SP SYSLOG_PORT
                         Syslog Port
-
 ```
