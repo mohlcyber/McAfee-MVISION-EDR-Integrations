@@ -33,7 +33,7 @@ class EDR():
         creds = (user, pw)
         self.auth(creds)
 
-        self.hours = args.hours
+        self.minutes = args.minutes
         self.limit = args.limit
 
         self.details = args.details
@@ -75,7 +75,7 @@ class EDR():
 
     def get_threats(self):
         try:
-            t_before = (datetime.now() - timedelta(hours=self.hours)).strftime(self.pattern)
+            t_before = (datetime.now() - timedelta(minutes=self.minutes)).strftime(self.pattern)
             epoch_before = int(time.mktime(time.strptime(t_before, self.pattern)))
 
             filter = {}
@@ -152,7 +152,7 @@ class EDR():
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -H <HOURS> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>"""
+    usage = """python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -M <MINUTES> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>"""
     title = 'McAfee EDR Python API'
     parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
@@ -173,9 +173,9 @@ if __name__ == '__main__':
                         default='False',
                         help='Enrich threat information with trace data')
 
-    parser.add_argument('--hours', '-H',
+    parser.add_argument('--minutes', '-M',
                         required=True, type=int,
-                        help='Timeframe to pull data in hours')
+                        help='Timeframe to pull data in minutes')
 
     parser.add_argument('--limit', '-L',
                         required=True, type=int,
