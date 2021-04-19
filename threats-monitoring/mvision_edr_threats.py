@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.4 (06.04.2021)
+# Written by mohlcyber v.0.5 (19.04.2021)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -75,7 +75,7 @@ class EDR():
 
     def get_threats(self):
         try:
-            t_before = (datetime.now() - timedelta(minutes=self.minutes)).strftime(self.pattern)
+            t_before = (datetime.utcnow() - timedelta(minutes=self.minutes)).strftime(self.pattern)
             epoch_before = int(time.mktime(time.strptime(t_before, self.pattern)))
 
             filter = {}
