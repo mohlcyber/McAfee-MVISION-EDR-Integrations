@@ -12,7 +12,7 @@ The script contains various modules to ingest trace data into e.g. ServiceNow, T
 [McAfee MVISION EDR Historical Search](history-search):
 This is a script to query the historical data store in MVISION EDR.
 
-[McAfee MVISION EDR RemoveFiles Script](remove-file): 
+[McAfee MVISION EDR RemoveFiles Script](real-time-search-reaction): 
 This is a script that will search for systems based on a specific hash and will automatically remove these files.
 
 [McAfee MVISION EDR Threats](threats-monitoring):
