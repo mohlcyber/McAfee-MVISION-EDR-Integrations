@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.5 (19.04.2021)
+# Written by mohlcyber v.0.6 (28.04.2021)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -8,6 +8,7 @@ import requests
 import time
 import logging
 import json
+import os
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime, timedelta
@@ -31,13 +32,32 @@ class EDR():
         user = args.user
         pw = args.password
         creds = (user, pw)
-        self.auth(creds)
 
-        self.minutes = args.minutes
-        self.limit = args.limit
-
-        self.details = args.details
+        ### Don't like to have it in init but leave it for now
         self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
+        self.cache_fname = 'cache.log'
+        if os.path.isfile(self.cache_fname):
+            cache = open(self.cache_fname, 'r')
+            last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
+
+            ### TempFix lets calc localtimzone delta
+            now = datetime.astimezone(datetime.now())
+            hours = int(str(now)[-5:].split(':')[0])
+            minutes = int(str(now)[-5:].split(':')[1])
+            ### End TempFix
+
+            self.last_pulled = (last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
+            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(last_detection))
+            self.logger.debug('Pulling newest threats from: {0}'.format(self.last_pulled))
+            cache.close()
+        else:
+            self.logger.debug('Cache does not exists. Pulling data from last 7 days.')
+            self.last_pulled = (datetime.now() - timedelta(days=7)).strftime(self.pattern)
+
+        self.limit = args.limit
+        self.details = args.details
+
+        self.auth(creds)
 
     def logging(self):
         # setup the console logger
@@ -65,7 +85,7 @@ class EDR():
             if res.ok:
                 token = res.json()['AuthorizationToken']
                 self.request.headers = {'Authorization': 'Bearer {}'.format(token)}
-                self.logger.debug('AUTHENTICATION: Successfully authenticated')
+                self.logger.debug('Successfully authenticated')
             else:
                 self.logger.error('Error in edr.auth(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
@@ -75,21 +95,24 @@ class EDR():
 
     def get_threats(self):
         try:
-            t_before = (datetime.utcnow() - timedelta(minutes=self.minutes)).strftime(self.pattern)
-            epoch_before = int(time.mktime(time.strptime(t_before, self.pattern)))
+            epoch_before = int(time.mktime(time.strptime(self.last_pulled, self.pattern)))
 
             filter = {}
             severities = ["s0", "s1", "s2", "s3", "s4", "s5"]
             filter['severities'] = severities
 
             res = self.request.get(
-                'https://api.' + self.base_url + '/ft/api/v2/ft/threats?sort=-rank&filter={0}&from={1}&limit={2}'
-                .format(json.dumps(filter), str(epoch_before * 1000), str(self.limit)))
+                'https://api.{0}/ft/api/v2/ft/threats?sort=-lastDetected&filter={1}&from={2}&limit={3}'
+                .format(self.base_url, json.dumps(filter), str(epoch_before * 1000), str(self.limit)))
 
             if res.ok:
                 self.logger.info('SUCCESS: Successful retrieved threats.')
 
                 res = res.json()
+                if res['threats']:
+                    cache = open(self.cache_fname, 'w')
+                    cache.write(res['threats'][0]['lastDetected'])
+                    cache.close()
 
                 for threat in res['threats']:
                     # Enrich with detections
@@ -152,7 +175,7 @@ class EDR():
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -M <MINUTES> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>"""
+    usage = """python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>"""
     title = 'McAfee EDR Python API'
     parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
@@ -171,11 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--details', '-D',
                         required=False, type=str, choices=['True', 'False'],
                         default='False',
-                        help='Enrich threat information with trace data')
-
-    parser.add_argument('--minutes', '-M',
-                        required=True, type=int,
-                        help='Timeframe to pull data in minutes')
+                        help='EXPERIMENTAL: Enrich threat information with trace data')
 
     parser.add_argument('--limit', '-L',
                         required=True, type=int,
