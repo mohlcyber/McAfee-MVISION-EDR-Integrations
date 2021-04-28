@@ -1,8 +1,8 @@
 # McAfee MVISION EDR Threats (Monitoring)
 
-This is a script to retrieve the threat detections from MVISION EDR (Monitoring Dashboard). The script requires a username, password, details (True/False), hours and a limit to query the threats.
+This is a script to retrieve the threat detections from MVISION EDR (Monitoring Dashboard). The script requires a username, password and a limit to query the threats. The script will write a file called cache.log to safe the last threat detection date. In case of internet connection issue or script execution issue it makes sure to pull all newest threat detections.
 
-Further the script allows to retrieve additional details about the threat itself (-D / --details flag). This includes traces of the affected systems. 
+Further the script allows to retrieve additional details about the threat itself (-D / --details flag). This includes traces of the affected systems. This feature is experimental.
 
 Usage:
 
@@ -20,8 +20,6 @@ optional arguments:
                         MVISION EDR Password
   --details {True,False}, -D {True,False}
                         Enrich threat information with trace data
-  --minutes MINUTES, -M MINUTES
-                        Timeframe to pull data in minutes
   --limit LIMIT, -L LIMIT
                         Maximum number of returned items
   --syslog-ip SYSLOG_IP, -S SYSLOG_IP
