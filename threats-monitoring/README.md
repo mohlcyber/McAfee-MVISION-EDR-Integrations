@@ -19,7 +19,7 @@ optional arguments:
   --password PASSWORD, -P PASSWORD
                         MVISION EDR Password
   --details {True,False}, -D {True,False}
-                        Enrich threat information with trace data
+                        EXPERIMENTAL: Enrich threat information with trace data
   --limit LIMIT, -L LIMIT
                         Maximum number of returned items
   --syslog-ip SYSLOG_IP, -S SYSLOG_IP
