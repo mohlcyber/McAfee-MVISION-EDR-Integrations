@@ -37,19 +37,22 @@ class EDR():
         self.cache_fname = 'cache.log'
         if os.path.isfile(self.cache_fname):
             cache = open(self.cache_fname, 'r')
-            self.last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
+            last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
 
             now = datetime.astimezone(datetime.now())
             hours = int(str(now)[-5:].split(':')[0])
             minutes = int(str(now)[-5:].split(':')[1])
 
-            self.last_pulled = (self.last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
-            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(self.last_detection))
+            self.last_pulled = (last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
+            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(last_detection))
             self.logger.debug('Pulling newest threats from: {0}'.format(self.last_pulled))
             cache.close()
+
+            self.last_check = (last_detection + timedelta(seconds=1)).strftime(self.pattern)
         else:
             self.logger.debug('Cache does not exists. Pulling data from last 7 days.')
-            self.last_pulled = (datetime.now() - timedelta(days=7)).strftime(self.pattern)
+            self.last_pulled = (datetime.now() - timedelta(days=30)).strftime(self.pattern)
+            self.last_check = (datetime.now() - timedelta(days=30)).strftime(self.pattern)
 
         self.limit = args.limit
         self.details = args.details
@@ -131,8 +134,7 @@ class EDR():
                                 traces = self.get_trace(maGuid, traceId)
                                 detection['traces'] = traces
 
-                        self.logger.info(json.dumps(res))
-                        sys.exit()
+                    self.logger.info(json.dumps(res))
                     if args.syslog_ip and args.syslog_port:
                         for threat in res['threats']:
                             self.syslog.info(json.dumps(threat, sort_keys=True))
@@ -153,8 +155,7 @@ class EDR():
 
     def get_detections(self, threatId):
         try:
-            tmp_last_detected = (self.last_detection + timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
-            last_detected = datetime.strptime(tmp_last_detected, '%Y-%m-%dT%H:%M:%SZ')
+            last_detected = datetime.strptime(self.last_check, self.pattern)
 
             res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
                                    .format(threatId))
