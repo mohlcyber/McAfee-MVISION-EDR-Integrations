@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.6 (28.04.2021)
+# Written by mohlcyber v.0.7 (18.06.2021)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -33,26 +33,23 @@ class EDR():
         pw = args.password
         creds = (user, pw)
 
-        ### Don't like to have it in init but leave it for now
         self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
         self.cache_fname = 'cache.log'
         if os.path.isfile(self.cache_fname):
             cache = open(self.cache_fname, 'r')
-            last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
+            self.last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
 
-            ### TempFix lets calc localtimzone delta
             now = datetime.astimezone(datetime.now())
             hours = int(str(now)[-5:].split(':')[0])
             minutes = int(str(now)[-5:].split(':')[1])
-            ### End TempFix
 
-            self.last_pulled = (last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
-            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(last_detection))
+            self.last_pulled = (self.last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
+            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(self.last_detection))
             self.logger.debug('Pulling newest threats from: {0}'.format(self.last_pulled))
             cache.close()
         else:
             self.logger.debug('Cache does not exists. Pulling data from last 7 days.')
-            self.last_pulled = (datetime.now() - timedelta(days=7)).strftime(self.pattern)
+            self.last_pulled = (datetime.now() - timedelta(days=30)).strftime(self.pattern)
 
         self.limit = args.limit
         self.details = args.details
@@ -90,8 +87,12 @@ class EDR():
                 self.logger.error('Error in edr.auth(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
                 sys.exit()
+
         except Exception as error:
-            self.logger.error('Error in edr.auth(). Error: {}'.format(str(error)))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                      line_no=exc_tb.tb_lineno, error=str(error)))
 
     def get_threats(self):
         try:
@@ -109,53 +110,75 @@ class EDR():
                 self.logger.info('SUCCESS: Successful retrieved threats.')
 
                 res = res.json()
-                if res['threats']:
+                if len(res['threats']) > 0:
                     cache = open(self.cache_fname, 'w')
                     cache.write(res['threats'][0]['lastDetected'])
                     cache.close()
 
-                for threat in res['threats']:
-                    # Enrich with detections
-                    detections = self.get_detections(threat['id'])
-                    threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}' \
-                        .format(threat['id'])
-                    threat['detections'] = detections
-
-                    # Enrich with trace
-                    if self.details == 'True':
-                        for detection in threat['detections']['detections']:
-                            maGuid = detection['host']['maGuid']
-                            traceId = detection['traceId']
-
-                            traces = self.get_trace(maGuid, traceId)
-                            detection['traces'] = traces
-
-                self.logger.info(json.dumps(res))
-                if args.syslog_ip and args.syslog_port:
                     for threat in res['threats']:
-                        self.syslog.info(json.dumps(threat, sort_keys=True))
+                        # Enrich with detections
+                        detections = self.get_detections(threat['id'])
+                        threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}'\
+                            .format(threat['id'])
+                        threat['detections'] = detections
+
+                        for detection in threat['detections']:
+                            # Enrich with trace
+                            if self.details == 'True':
+                                maGuid = detection['host']['maGuid']
+                                traceId = detection['traceId']
+
+                                traces = self.get_trace(maGuid, traceId)
+                                detection['traces'] = traces
+
+                        self.logger.info(json.dumps(res))
+                        sys.exit()
+                    if args.syslog_ip and args.syslog_port:
+                        for threat in res['threats']:
+                            self.syslog.info(json.dumps(threat, sort_keys=True))
+
+                else:
+                    self.logger.info('No new threats identified. Exiting. {0}'.format(res))
+                    sys.exit()
             else:
                 self.logger.error('Error in edr.get_threats(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
                 sys.exit()
 
         except Exception as error:
-            self.logger.error('Error in edr.get_threats(). Error: {}'.format(str(error)))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                      line_no=exc_tb.tb_lineno, error=str(error)))
 
     def get_detections(self, threatId):
         try:
+            tmp_last_detected = (self.last_detection + timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+            last_detected = datetime.strptime(tmp_last_detected, '%Y-%m-%dT%H:%M:%SZ')
+
             res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
                                    .format(threatId))
 
             if res.ok:
-                return res.json()
+                detections = []
+                for detection in res.json()['detections']:
+                    first_detected = datetime.strptime(detection['firstDetected'], '%Y-%m-%dT%H:%M:%SZ')
+
+                    if first_detected >= last_detected:
+                        detections.append(detection)
+
+                return detections
             else:
                 self.logger.error('Error in retrieving edr.get_detections(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
                 sys.exit()
 
+
         except Exception as error:
-            self.logger.error('Error in edr.get_detections(). Error: {}'.format(str(error)))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                      line_no=exc_tb.tb_lineno, error=str(error)))
 
     def get_trace(self, maGuid, traceId):
         try:
@@ -163,15 +186,17 @@ class EDR():
                                    '/historical/api/v1/traces/main-activity-by-trace-id?maGuid={0}&traceId={1}'
                                    .format(maGuid, traceId))
 
-            if res.ok:
-                return (res.json())
+            if res.status_code == 200:
+                return res.json()
             else:
-                self.logger.error('Error in edr.get_trace(). Error: {0} - {1}'
-                                  .format(str(res.status_code), res.text))
-                sys.exit()
+                return {}
+
 
         except Exception as error:
-            self.logger.error('Error in edr.get_trace(). Error: {}'.format(str(error)))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                      line_no=exc_tb.tb_lineno, error=str(error)))
 
 
 if __name__ == '__main__':
