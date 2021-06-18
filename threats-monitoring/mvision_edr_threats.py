@@ -51,8 +51,8 @@ class EDR():
             self.last_check = (last_detection + timedelta(seconds=1)).strftime(self.pattern)
         else:
             self.logger.debug('Cache does not exists. Pulling data from last 7 days.')
-            self.last_pulled = (datetime.now() - timedelta(days=30)).strftime(self.pattern)
-            self.last_check = (datetime.now() - timedelta(days=30)).strftime(self.pattern)
+            self.last_pulled = (datetime.now() - timedelta(days=7)).strftime(self.pattern)
+            self.last_check = (datetime.now() - timedelta(days=7)).strftime(self.pattern)
 
         self.limit = args.limit
         self.details = args.details
