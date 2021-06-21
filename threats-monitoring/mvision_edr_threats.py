@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.7 (18.06.2021)
+# Written by mohlcyber v.0.8 (21.06.2021)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -123,10 +123,10 @@ class EDR():
                         detections = self.get_detections(threat['id'])
                         threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}'\
                             .format(threat['id'])
-                        threat['detections'] = detections
 
-                        for detection in threat['detections']:
-                            # Enrich with trace
+                        for detection in detections:
+                            threat['detection'] = detection
+
                             if self.details == 'True':
                                 maGuid = detection['host']['maGuid']
                                 traceId = detection['traceId']
@@ -134,10 +134,10 @@ class EDR():
                                 traces = self.get_trace(maGuid, traceId)
                                 detection['traces'] = traces
 
-                    self.logger.info(json.dumps(res))
-                    if args.syslog_ip and args.syslog_port:
-                        for threat in res['threats']:
-                            self.syslog.info(json.dumps(threat, sort_keys=True))
+                            self.logger.info(json.dumps(threat))
+
+                            if args.syslog_ip and args.syslog_port:
+                                self.syslog.info(json.dumps(threat, sort_keys=True))
 
                 else:
                     self.logger.info('No new threats identified. Exiting. {0}'.format(res))
