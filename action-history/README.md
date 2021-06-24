@@ -5,14 +5,14 @@ This is a script to retrieve the action history from MVISION EDR. The script req
 Usage:
 
 ```sh
-python mvision_edr_action_history.py -R <REGION>-U <USERNAME> -P <PASSWORD> -L <MAX RESULTS>
+python3 mvision_edr_action_history.py -R <REGION>-U <USERNAME> -P <PASSWORD> -L <MAX RESULTS>
 
 ```
 
 Example:
 
 ```sh
-python mvision_edr_action_history.py -R EU -U username@test.com -P password -L 20
+python3 mvision_edr_action_history.py -R EU -U username@test.com -P password -L 20
 ```
 
 Output:
