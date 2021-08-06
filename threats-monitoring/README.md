@@ -7,13 +7,13 @@ Further the script allows to retrieve additional details about the threat itself
 Usage:
 
 ```sh
-usage: python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -M <MINUTES> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>
+usage: python mvision_edr_threats.py -R <REGION> -U <USERNAME> -P <PASSWORD> -D <DETAILS> -L <MAX RESULTS> -S <SYSLOG IP> -SP <SYSLOG PORT>
 
 McAfee EDR Python API
 
 optional arguments:
   -h, --help            show this help message and exit
-  --region {EU,US,SY}, -R {EU,US,SY}
+  --region {EU,US-W,US-E,SY,GOV}, -R {EU,US-W,US-E,SY,GOV}
                         MVISION EDR Tenant Location
   --user USER, -U USER  MVISION EDR Username
   --password PASSWORD, -P PASSWORD
