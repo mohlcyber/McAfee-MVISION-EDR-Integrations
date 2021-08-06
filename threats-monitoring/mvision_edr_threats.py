@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.8 (21.06.2021)
+# Written by mohlcyber v.0.9 (06.08.2021)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
@@ -19,10 +19,14 @@ class EDR():
     def __init__(self):
         if args.region == 'EU':
             self.base_url = 'soc.eu-central-1.mcafee.com'
-        elif args.region == 'US':
+        elif args.region == 'US-W':
             self.base_url = 'soc.mcafee.com'
+        elif args.region == 'US-E':
+            self.base_url = 'soc.us-east-1.mcafee.com'
         elif args.region == 'SY':
             self.base_url = 'soc.ap-southeast-2.mcafee.com'
+        elif args.region == 'GOV':
+            self.base_url = 'soc.mcafee-gov.com'
 
         self.verify = True
         self.logging()
@@ -207,7 +211,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--region', '-R',
                         required=True, type=str,
-                        help='MVISION EDR Tenant Location', choices=['EU', 'US', 'SY'])
+                        help='MVISION EDR Tenant Location', choices=['EU', 'US-W', 'US-E', 'SY', 'GOV'])
 
     parser.add_argument('--user', '-U',
                         required=True, type=str,
