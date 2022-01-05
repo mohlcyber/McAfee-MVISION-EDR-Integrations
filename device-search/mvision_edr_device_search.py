@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.6 (05.04.2021)
-# Script to query historical data
+# Written by mohlcyber v.0.7 (05.01.2022)
+# Script to query device search
 
 import sys
 import getpass
@@ -16,11 +16,15 @@ from datetime import datetime, timedelta
 class EDR():
     def __init__(self):
         if args.region == 'EU':
-            self.base_url = 'https://api.soc.eu-central-1.mcafee.com'
-        elif args.region == 'US':
-            self.base_url = 'https://api.soc.mcafee.com'
+            self.base_url = 'soc.eu-central-1.mcafee.com'
+        elif args.region == 'US-W':
+            self.base_url = 'soc.mcafee.com'
+        elif args.region == 'US-E':
+            self.base_url = 'soc.us-east-1.mcafee.com'
         elif args.region == 'SY':
-            self.base_url = 'https://api.soc.ap-southeast-2.mcafee.com'
+            self.base_url = 'soc.ap-southeast-2.mcafee.com'
+        elif args.region == 'GOV':
+            self.base_url = 'soc.mcafee-gov.com'
 
         self.verify = True
 
@@ -47,7 +51,7 @@ class EDR():
         self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
 
     def auth(self, creds):
-        r = requests.get(self.base_url + '/identity/v1/login', auth=creds)
+        r = requests.get('https://api.' + self.base_url + '/identity/v1/login', auth=creds)
         res = r.json()
 
         if r.status_code == 200:
@@ -61,7 +65,7 @@ class EDR():
     def get_host(self):
         try:
             query = {"hostname": self.hostname}
-            res = self.request.get(self.base_url + '/ft/api/v2/ft/hosts/?filter={}&fields=hostname,maGuid'
+            res = self.request.get('https://api.' + self.base_url + '/ft/api/v2/ft/hosts/?filter={}&fields=hostname,maGuid'
                                    .format(json.dumps(query)),
                                    headers=self.headers)
 
@@ -112,7 +116,7 @@ class EDR():
             if self.search is not None:
                 query['$filter']['$and'][0]['$term'] = self.search
 
-            res = self.request.get(self.base_url + '/ltc/api/v1/ltc/query/traces/?query={}&limit={}&skip=0'
+            res = self.request.get('https://api.' + self.base_url + '/ltc/api/v1/ltc/query/traces/?query={}&limit={}&skip=0'
                                    .format(json.dumps(query), self.limit),
                                    headers=self.headers)
 
@@ -143,7 +147,7 @@ class EDR():
 
             filter['severities'] = severities
 
-            res = self.request.get(self.base_url + '/mvm/api/v1/middleware/detections?sort=-eventDate&filter={0}&from={1}&to={2}&skip=0&limit={3}&externalOffset=0'
+            res = self.request.get('https://api.' + self.base_url + '/mvm/api/v1/middleware/detections?sort=-eventDate&filter={0}&from={1}&to={2}&skip=0&limit={3}&externalOffset=0'
                                    .format(json.dumps(filter), str(epoch_before*1000), str(epoch_now*1000), self.limit),
                                    headers=self.headers)
 
@@ -151,20 +155,21 @@ class EDR():
                 self.logger.error('Error in edr.detect_search - {0} - {1}'.format(str(res.status_code), res.text))
             else:
                 self.logger.info(res.json())
-                self.logger.info('Found {0} items.'.format(res.json()['count']))
+                if len(res.json()['events']) != 0:
+                    self.logger.info('Found {0} items.'.format(res.json()['count']))
 
         except Exception as error:
             self.logger.error('Error in edr.detect_search. Error: {}'.format(str(error)))
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_hist_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>"""
+    usage = """python mvision_edr_device_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>"""
     title = 'McAfee EDR Python API'
     parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('--region', '-R',
                         required=True, type=str,
-                        help='MVISION EDR Tenant Location', choices=['EU', 'US', 'SY'])
+                        help='MVISION EDR Tenant Location', choices=['EU', 'US-W', 'US-E', 'SY', 'GOV'])
 
     parser.add_argument('--user', '-U',
                         required=True, type=str,
