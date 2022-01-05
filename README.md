@@ -10,7 +10,7 @@ This is a script to consume activity feeds from MVISION EDR.
 The script contains various modules to ingest trace data into e.g. ServiceNow, TheHive, Syslog or Email.
 
 [McAfee MVISION EDR Device Search](device-search):
-This is a script to query the historical data store in MVISION EDR.
+This is a script to query the device search in MVISION EDR.
 
 [McAfee MVISION EDR Real-Time-Search and Reaction Script](real-time-search-reaction): 
 This is a collections of scripts that will start RTS for hashes or process and provides the ability to execute reactions.
