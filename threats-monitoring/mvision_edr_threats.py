@@ -34,6 +34,12 @@ class EDR():
         self.session = requests.Session()
         self.session.verify = True
 
+        if args.proxy == 'True':
+            proxies = {
+                'https': 'http://1.1.1.1:9090'
+            }
+            self.session.proxies = proxies
+
         creds = (args.client_id, args.client_secret)
 
         self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -255,6 +261,10 @@ if __name__ == '__main__':
     parser.add_argument('--loglevel', '-LL',
                         required=False, type=str, choices=['INFO', 'DEBUG'], default='INFO',
                         help='Set Log Level')
+
+    parser.add_argument('--proxy', '-P',
+                        required=False, type=str, choices=['True', 'False'], default='False',
+                        help='Provide Proxy JSON in line 39')
 
     parser.add_argument('--file', '-F',
                         required=False, type=str, choices=['True', 'False'], default='False',
