@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.1 (25.04.2022)
+# Written by mohlcyber v.1.0 (25.04.2022)
 # Script to generate client credentials for use in api calls
 # This needs to be called only once.
 # The generated client credentials must be safely stored for use in api calls
