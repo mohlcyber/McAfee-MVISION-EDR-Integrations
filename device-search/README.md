@@ -8,9 +8,9 @@ Client_ID and Client_Secrets can get generated with the [mvision_edr_creds_gener
 Usage:
 
 ```sh
-usage: python mvision_edr_device_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>
+usage: python mvision_edr_device_search.py -R <REGION> -C <CLIENT_ID> -S <CLIENT_SECRET> -H <HOSTNAME> -T <TYPE> -ST <SEARCH_TERM> -D <DAYS> -L <MAX RESULTS> -LL <LOG_LEVEL>
 
-McAfee EDR Python API
+MVISION EDR Python API
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -31,5 +31,4 @@ optional arguments:
                         Limit
   --loglevel {INFO,DEBUG}, -LL {INFO,DEBUG}
                         Set Log Level
-
 ```
