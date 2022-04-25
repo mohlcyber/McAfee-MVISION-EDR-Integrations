@@ -47,7 +47,7 @@ class EDR():
     def auth(self, creds):
         try:
             payload = {
-                'scope': 'soc.hts.c soc.hts.r soc.rts.c soc.rts.r soc.qry.pr',
+                'scope': 'mi.user.investigate soc.act.tg soc.hts.c soc.hts.r soc.rts.c soc.rts.r soc.qry.pr',
                 'grant_type': 'client_credentials',
                 'audience': 'mcafee'
             }
