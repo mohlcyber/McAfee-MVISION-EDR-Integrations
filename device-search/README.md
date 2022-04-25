@@ -1,7 +1,9 @@
 # McAfee MVISION EDR Device Search
 
-This is a script to query the device search in MVISION EDR. The script requires a tenant region, username, hostname, days and a limit to query the device data store. The days are referring to the timeframe. E.g search data from 3 days (starting point today (utc)).
+This is a script to query the device search in MVISION EDR. 
 
+The script requires tenant_region, client_id, client_secret, hostname, days and a limit to query the device data store. 
+Client_ID and Client_Secrets can get generated with the [mvision_edr_creds_generator.py](https://github.com/mohlcyber/McAfee-MVISION-EDR-Integrations/blob/master/mvision_edr_creds_generator.py) script posted in the main [repository](https://github.com/mohlcyber/McAfee-MVISION-EDR-Integrations).
 
 Usage:
 
