@@ -197,8 +197,8 @@ class EDR():
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_device_search.py -R <REGION> -U <USERNAME> -P <PASSWORD> -H <HOSTNAME> -T <TYPE> -S <SEARCH> -D <DAYS> -L <MAX RESULTS>"""
-    title = 'McAfee EDR Python API'
+    usage = """python mvision_edr_device_search.py -R <REGION> -C <CLIENT_ID> -S <CLIENT_SECRET> -H <HOSTNAME> -T <TYPE> -ST <SEARCH_TERM> -D <DAYS> -L <MAX RESULTS> -LL <LOG_LEVEL>"""
+    title = 'MVISION EDR Python API'
     parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('--region', '-R',
