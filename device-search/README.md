@@ -12,18 +12,22 @@ McAfee EDR Python API
 
 optional arguments:
   -h, --help            show this help message and exit
-  --region {EU,US,SY}, -R {EU,US-W,US-E,SY,GOV}
+  --region {EU,US-W,US-E,SY,GOV}, -R {EU,US-W,US-E,SY,GOV}
                         MVISION EDR Tenant Location
-  --user USER, -U USER  MVISION EDR Username
-  --password PASSWORD, -P PASSWORD
-                        MVISION EDR Password
+  --client_id CLIENT_ID, -C CLIENT_ID
+                        MVISION EDR Client ID
+  --client_secret CLIENT_SECRET, -S CLIENT_SECRET
+                        MVISION EDR Client Secret
   --hostname HOSTNAME, -H HOSTNAME
                         Hostname to Query
   --type {APICall,ProcessCreated,PECreated,NonPECreated,ArchiveCreated,ScriptCreated,ScriptExecuted,AdminHackingToolExecuted,ASEPCreatedOrModified,ServiceChanged,NetworkConnection,DNSQuery,ScheduledTaskRegistered,LoginLogout,LoadedDLLs,UserAccounts,WMIActivity,EPP_Response,DetectionsAlerts,Alerts}, -T {APICall,ProcessCreated,PECreated,NonPECreated,ArchiveCreated,ScriptCreated,ScriptExecuted,AdminHackingToolExecuted,ASEPCreatedOrModified,ServiceChanged,NetworkConnection,DNSQuery,ScheduledTaskRegistered,LoginLogout,LoadedDLLs,UserAccounts,WMIActivity,EPP_Response,DetectionsAlerts,Alerts}
                         Search Type
-  --search SEARCH, -S SEARCH
+  --search SEARCH, -ST SEARCH
                         Search Term
   --days DAYS, -D DAYS  How many days back to query
   --limit LIMIT, -L LIMIT
                         Limit
+  --loglevel {INFO,DEBUG}, -LL {INFO,DEBUG}
+                        Set Log Level
+
 ```
