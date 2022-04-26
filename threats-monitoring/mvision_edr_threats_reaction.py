@@ -61,7 +61,6 @@ class EDR():
         self.auth(creds)
 
     def logging(self):
-        # setup the console logger
         self.logger = logging.getLogger('logs')
         self.logger.setLevel(args.loglevel.upper())
         handler = logging.StreamHandler()
@@ -72,16 +71,16 @@ class EDR():
     def auth(self, creds):
         try:
             payload = {
-                'scope': 'soc.hts.c soc.hts.r soc.rts.c soc.rts.r soc.qry.pr',
+                'scope': 'mi.user.investigate soc.act.tg soc.hts.c soc.hts.r soc.rts.c soc.rts.r soc.qry.pr soc.internal',
                 'grant_type': 'client_credentials',
                 'audience': 'mcafee'
             }
 
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded'
+            self.session.headers = {
+                'Content-Type': 'application/json'
             }
 
-            res = self.session.post('https://{0}/token'.format(self.iam_url), headers=headers, data=payload, auth=creds)
+            res = self.session.post('https://{0}/token'.format(self.iam_url), data=payload, auth=creds)
 
             self.logger.debug('request url: {}'.format(res.url))
             self.logger.debug('request headers: {}'.format(res.request.headers))
@@ -89,7 +88,7 @@ class EDR():
 
             if res.ok:
                 token = res.json()['access_token']
-                self.session.headers = {'Authorization': 'Bearer {}'.format(token)}
+                self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
                 self.logger.debug('AUTHENTICATION: Successfully authenticated.')
             else:
                 self.logger.error('Error in edr.auth(). Error: {0} - {1}'
@@ -135,14 +134,15 @@ class EDR():
                         for detection in detections:
                             threat['detection'] = detection
 
-                            pName = threat['name']
-                            tId = threat['id']
-                            caseId = self.get_case(pName, tId)
-                            systemId = detection['id']
+                        pname = threat['name']
+                        tid = threat['id']
+                        caseid = self.get_case(pname, tid)
+                        affhids = self.get_affhosts(tid)
 
-                            self.exec_reaction(caseId, tId, systemId)
+                        for hid in affhids:
+                            self.exec_reaction(caseid, tid, hid)
 
-                            #self.logger.info(json.dumps(threat))
+                        #self.logger.info(json.dumps(threat))
 
                 else:
                     self.logger.info('No new threats identified. Exiting. {0}'.format(res))
@@ -204,7 +204,7 @@ class EDR():
             else:
                 self.logger.error('Error in retrieving edr.get_case(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
-                sys.exit()
+                exit()
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -212,15 +212,37 @@ class EDR():
                               .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
                                       line_no=exc_tb.tb_lineno, error=str(error)))
 
-    def exec_reaction(self, caseId, tId, hId):
+    def get_affhosts(self, tid):
+        try:
+            afids = []
+            res = self.session.get('https://api.{0}/ft/api/v2/ft/threats/{1}/affectedhosts'.format(self.base_url, str(tid)))
+
+            if res.ok:
+                for host in res.json()['affectedHosts']:
+                    afids.append(host['id'])
+
+                return afids
+
+            else:
+                self.logger.error('Error in retrieving edr.get_affectedhosts(). Error: {0} - {1}'
+                                  .format(str(res.status_code), res.text))
+                exit()
+
+        except Exception as error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                      line_no=exc_tb.tb_lineno, error=str(error)))
+
+    def exec_reaction(self, caseId, tid, hid):
         try:
             data = {
                 'action': 'StopProcess', # options [StopProcess, StopAndRemove, QuarantineHost, UnquarantineHost]
                 'caseId': str(caseId),
                 'threatActionArguments': {
-                    'threatId': str(tId),
+                    'threatId': str(tid),
                     'targetAffectedHosts': [
-                        str(hId)
+                        str(hid)
                     ]
                 }
             }
@@ -229,12 +251,12 @@ class EDR():
                                     data=json.dumps(data))
 
             if res.ok:
-                self.logger.info('Successfully executed reaction for threatId {}'.format(tId))
+                self.logger.info('Successfully executed reaction for threatId {}'.format(tid))
                 self.logger.info(res.text)
             else:
                 self.logger.error('Error in retrieving edr.exec_reaction(). Error: {0} - {1}'
                                   .format(str(res.status_code), res.text))
-                sys.exit()
+                #sys.exit()
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
