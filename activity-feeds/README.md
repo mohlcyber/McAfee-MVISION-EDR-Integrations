@@ -22,9 +22,10 @@ optional arguments:
   -h, --help            show this help message and exit
   --region {EU,US,SY}, -R {EU,US,SY}
                         MVISION EDR Tenant Location
-  --user USER, -U USER  MVISION EDR Username
-  --password PASSWORD, -P PASSWORD
-                        MVISION EDR Password
+  --client_id CLIENT_ID, -CI CLIENT_ID
+                        MVISION EDR Client ID
+  --client_secret CLIENT_SECRET, -CS CLIENT_SECRET
+                        MVISION EDR Client Secret
   --module {Syslog,TheHive,Email,ServiceNow}, -M {Syslog,TheHive,Email,ServiceNow}
                         Modules
   --command COMMAND, -C COMMAND
