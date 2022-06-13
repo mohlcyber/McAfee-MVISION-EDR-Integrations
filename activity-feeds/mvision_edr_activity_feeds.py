@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.0.6 (12.01.2021)
+# Written by mohlcyber v.1.0 (13.06.2022)
 
 import sys
 import getpass
@@ -8,12 +8,12 @@ import logging
 import requests
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from dxlstreamingclient.channel import Channel, ChannelAuth
+from dxlstreamingclient.channel import Channel, ClientCredentialsChannelAuth
 
 requests.packages.urllib3.disable_warnings()
 
 # Topics to subscribe: 'case-mgmt-events', 'BusinessEvents', 'threatEvents'
-TOPICS = ['threatEvents']
+TOPICS = ['threatEvents', 'case-mgmt-events', 'BusinessEvents']
 
 
 class EDR():
@@ -24,9 +24,15 @@ class EDR():
             self.url = 'https://api.soc.mcafee.com/'
         elif args.region == 'SY':
             self.url = 'https://api.soc.ap-southeast-2.mcafee.com/'
-        self.user = args.user
-        self.pw = args.password
-        self.auth = ChannelAuth(self.url, self.user, self.pw, verify_cert_bundle='')
+        self.client_id = args.client_id
+        self.client_secret = args.client_secret
+        self.auth = ClientCredentialsChannelAuth('https://iam.mcafee-cloud.com/', self.client_id, self.client_secret,
+                                                 grant_type='client_credentials',
+                                                 audience='mcafee',
+                                                 scope='dxls.evt.r dxls.evt.w mi.user.investigate soc.act.tg '
+                                                       'soc.evt.vi soc.hts.c soc.hts.r soc.internal soc.inv.ade '
+                                                       'soc.qry.pr soc.rts.c soc.rts.r',
+                                                 verify_cert_bundle='')
 
         self.enrich = args.enrich
         loglevel = args.loglevel
@@ -43,7 +49,8 @@ class EDR():
     def activity_feed(self):
         logging.info("Starting event loop...")
         try:
-            with Channel(self.url, auth=self.auth, consumer_group='mvisionedr_events', verify_cert_bundle='') as channel:
+            with Channel(self.url,
+                         auth=self.auth, consumer_group='mvisionedr_events', verify_cert_bundle='') as channel:
                 def process_callback(payloads):
                     if not payloads == []:
                         for payload in payloads:
@@ -160,13 +167,13 @@ if __name__ == "__main__":
                         required=True, type=str,
                         help='MVISION EDR Tenant Location', choices=['EU', 'US', 'SY'])
 
-    parser.add_argument('--user', '-U',
+    parser.add_argument('--client_id', '-CI',
                         required=True, type=str,
-                        help='MVISION EDR Username')
+                        help='MVISION EDR Client ID')
 
-    parser.add_argument('--password', '-P',
+    parser.add_argument('--client_secret', '-CS',
                         required=False, type=str,
-                        help='MVISION EDR Password')
+                        help='MVISION EDR Client Secret')
 
     parser.add_argument('--module', '-M',
                         required=False, type=str,
@@ -213,9 +220,9 @@ if __name__ == "__main__":
                         required=False, help='ePO Server Password')
 
     args = parser.parse_args()
-    if not args.password:
-        args.password = getpass.getpass(prompt='MVISION EDR Password:')
-    if not args.epo_pwd:
+    if not args.client_secret:
+        args.client_secret = getpass.getpass(prompt='MVISION EDR Client Secret:')
+    if args.enrich == 'True' and not args.epo_pwd:
         args.epo_pwd = getpass.getpass(prompt='McAfee ePO Password:')
 
     edr = EDR()
