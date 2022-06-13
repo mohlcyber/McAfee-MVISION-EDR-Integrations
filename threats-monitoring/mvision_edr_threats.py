@@ -1,89 +1,69 @@
 #!/usr/bin/env python3
-# Written by mohlcyber v.1.0 (25.04.2022)
+# Written by mohlcyber v.1.7 (13.06.2022)
 # Script to retrieve all threats from the monitoring dashboard
 
 import sys
-import getpass
 import requests
 import time
 import logging
 import json
 import os
+import pytz
 
-from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime, timedelta
+from dateutil import tz
 from logging.handlers import SysLogHandler
+from dotenv import load_dotenv
+
+load_dotenv(verbose=True)
 
 
 class EDR():
     def __init__(self):
         self.iam_url = 'iam.mcafee-cloud.com/iam/v1.1'
-        if args.region == 'EU':
+        if edr_region == 'EU':
             self.base_url = 'soc.eu-central-1.mcafee.com'
-        elif args.region == 'US-W':
+        elif edr_region == 'US-W':
             self.base_url = 'soc.mcafee.com'
-        elif args.region == 'US-E':
+        elif edr_region == 'US-E':
             self.base_url = 'soc.us-east-1.mcafee.com'
-        elif args.region == 'SY':
+        elif edr_region == 'SY':
             self.base_url = 'soc.ap-southeast-2.mcafee.com'
-        elif args.region == 'GOV':
+        elif edr_region == 'GOV':
             self.base_url = 'soc.mcafee-gov.com'
 
-        self.logging()
-
         self.session = requests.Session()
-        self.session.verify = True
 
-        if args.proxy == 'True':
-            proxies = {
-                'https': 'http://1.1.1.1:9090'
-            }
-            self.session.proxies = proxies
+        if valid == 'False':
+            self.session.verify = False
+        else:
+            self.session.verify = True
 
-        creds = (args.client_id, args.client_secret)
+        if proxy is not None:
+            self.session.proxies['https'] = proxy
 
-        self.pattern = '%Y-%m-%dT%H:%M:%S.%fZ'
-        self.cache_fname = 'cache.log'
+        creds = (edr_client_id, edr_client_secret)
+
+        self.pattern = '%Y-%m-%dT%H:%M:%S.%f'
+        self.cache_fname = '{0}/cache.log'.format(cache_dir)
         if os.path.isfile(self.cache_fname):
             cache = open(self.cache_fname, 'r')
             last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
+            last_detection_utc = last_detection.replace(tzinfo=pytz.UTC)
+            next_pull = last_detection_utc.astimezone(tz.tzlocal()) + timedelta(seconds=1)
 
-            now = datetime.astimezone(datetime.now())
-            hours = int(str(now)[-5:].split(':')[0])
-            minutes = int(str(now)[-5:].split(':')[1])
-
-            self.last_pulled = (last_detection + timedelta(hours=hours, minutes=minutes, seconds=1)).strftime(self.pattern)
-            self.logger.debug('Cache exists. Last detection date UTC: {0}'.format(last_detection))
-            self.logger.debug('Pulling newest threats from: {0}'.format(self.last_pulled))
+            logger.debug('Cache exists. Last detection date UTC: {0}'.format(last_detection))
+            logger.debug('Pulling newest threats from: {0}'.format(next_pull))
             cache.close()
-
-            self.last_check = (last_detection + timedelta(seconds=1)).strftime(self.pattern)
         else:
-            self.logger.debug('Cache does not exists. Pulling data from last 14 days.')
-            self.last_pulled = (datetime.now() - timedelta(days=14)).strftime(self.pattern)
-            self.last_check = (datetime.now() - timedelta(days=14)).strftime(self.pattern)
+            logger.debug('Cache does not exists. Pulling data from last {0} days.'.format(initial_pull))
+            next_pull = datetime.now() - timedelta(days=int(initial_pull))
 
-        self.limit = '2000'
+        self.epoch_pull = str(datetime.timestamp(next_pull)*1000)[:13]
+        logger.debug('New pulling date {0} - epoch {1}'.format(next_pull, self.epoch_pull))
+
         self.auth(creds)
-
-    def logging(self):
-        # setup the console logger
-        self.logger = logging.getLogger('logs')
-        self.logger.setLevel(args.loglevel.upper())
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter("%(asctime)s;%(levelname)s;%(message)s")
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-
-        # setup the syslog logger
-        if args.syslog_ip is not None:
-            if args.syslog_port is not None:
-                self.syslog = logging.getLogger('syslog')
-                self.syslog.setLevel('DEBUG')
-                self.syslog.addHandler(SysLogHandler(address=(args.syslog_ip, args.syslog_port)))
-            else:
-                self.logger.error('Please provide also the Syslog Port')
-                sys.exit()
+        self.limit = 10000
 
     def auth(self, creds):
         try:
@@ -99,188 +79,257 @@ class EDR():
 
             res = self.session.post('https://{0}/token'.format(self.iam_url), headers=headers, data=payload, auth=creds)
 
-            self.logger.debug('request url: {}'.format(res.url))
-            self.logger.debug('request headers: {}'.format(res.request.headers))
-            self.logger.debug('request body: {}'.format(res.request.body))
-
             if res.ok:
                 token = res.json()['access_token']
                 self.session.headers = {'Authorization': 'Bearer {}'.format(token)}
-                self.logger.debug('AUTHENTICATION: Successfully authenticated.')
+                logger.debug('AUTHENTICATION: Successfully authenticated.')
             else:
-                self.logger.error('Error in edr.auth(). Error: {0} - {1}'
-                                  .format(str(res.status_code), res.text))
-                exit()
+                logger.error('Error in retrieving edr.auth(). Request url: {}'.format(res.url))
+                logger.error('Error in retrieving edr.auth(). Request headers: {}'.format(res.request.headers))
+                logger.error('Error in retrieving edr.auth(). Request body: {}'.format(res.request.body))
+                raise Exception('Error in retrieving edr.auth(). Error: {0} - {1}'.format(str(res.status_code), res.text))
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
-                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
-                                      line_no=exc_tb.tb_lineno, error=str(error)))
+            logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                         .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                 line_no=exc_tb.tb_lineno, error=str(error)))
+            raise
 
     def get_threats(self):
         try:
-            epoch_before = int(time.mktime(time.strptime(self.last_pulled, self.pattern)))
+            tthreat = 0
+            tdetect = 0
+            skip = 0
+            tnextflag = True
 
             filter = {}
             severities = ["s0", "s1", "s2", "s3", "s4", "s5"]
             filter['severities'] = severities
+            filter['scoreRange'] = [30]
 
-            res = self.session.get(
-                'https://api.{0}/ft/api/v2/ft/threats?sort=-lastDetected&filter={1}&from={2}&limit={3}'
-                .format(self.base_url, json.dumps(filter), str(epoch_before * 1000), str(self.limit)))
+            while(tnextflag):
+                res = self.session.get(
+                    'https://api.{0}/ft/api/v2/ft/threats?sort=-lastDetected&filter={1}&from={2}&limit={3}&skip={4}'
+                        .format(self.base_url, json.dumps(filter), self.epoch_pull, self.limit, skip))
 
-            self.logger.debug('request url: {}'.format(res.url))
-            self.logger.debug('request headers: {}'.format(res.request.headers))
-            self.logger.debug('request body: {}'.format(res.request.body))
+                if res.ok:
+                    res = res.json()
 
-            if res.ok:
-                self.logger.debug('SUCCESS: Successful retrieved threats.')
+                    if int(res['skipped']) + int(res['items']) == int(res['total']):
+                        tnextflag = False
+                    else:
+                        skip = int(res['skipped']) + int(res['items'])
 
-                res = res.json()
-                if len(res['threats']) > 0:
-                    cache = open(self.cache_fname, 'w')
-                    cache.write(res['threats'][0]['lastDetected'])
-                    cache.close()
+                    if len(res['threats']) > 0:
+                        if os.path.isfile(self.cache_fname):
+                            cache = open(self.cache_fname, 'r')
+                            last_detection = datetime.strptime(cache.read(), '%Y-%m-%dT%H:%M:%SZ')
+                            cache.close()
+                            if last_detection < (datetime.strptime(res['threats'][0]['lastDetected'], '%Y-%m-%dT%H:%M:%SZ')):
+                                logger.debug('More recent detection timestamp detected. Updating cache.log.')
+                                cache = open(self.cache_fname, 'w')
+                                cache.write(res['threats'][0]['lastDetected'])
+                                cache.close()
+                            else:
+                                logger.debug('More recent detection timestamp in cache.log already saved.')
+                        else:
+                            cache = open(self.cache_fname, 'w')
+                            cache.write(res['threats'][0]['lastDetected'])
+                            cache.close()
 
-                    for threat in res['threats']:
-                        detections = self.get_detections(threat['id'])
-                        threat['url'] = 'https://ui.' + self.base_url + '/monitoring/#/workspace/72,TOTAL_THREATS,{0}'\
-                            .format(threat['id'])
+                        for threat in res['threats']:
+                            affhosts = self.get_affected_hosts(threat['id'])
+                            ddetect_count = 0
+                            for host in affhosts:
+                                detections = self.get_detections(threat['id'], host['id'])
 
-                        for detection in detections:
-                            threat['detection'] = detection
+                                for detection in detections:
+                                    threat['detection'] = detection
 
-                            if args.trace == 'True':
-                                maGuid = detection['host']['maGuid']
-                                traceId = detection['traceId']
+                                    traceid = detection['traceId']
+                                    maguid = detection['host']['maGuid']
+                                    sha256 = detection['sha256']
 
-                                traces = self.get_trace(maGuid, traceId)
-                                detection['traces'] = traces
+                                    threat['url'] = 'https://ui.{0}/monitoring/#/workspace/72,TOTAL_THREATS,{1}?traceId={2}&maGuid={3}&sha256={4}' \
+                                        .format(self.base_url, threat['id'], traceid, maguid, sha256)
 
-                            self.logger.info(json.dumps(threat))
+                                    logger.debug(json.dumps(threat))
+                                    logger.info('Retrieved new MVISION EDR Threat Detection. {0}'.format(threat['name']))
 
-                            if args.syslog_ip and args.syslog_port:
-                                self.syslog.info(json.dumps(threat, sort_keys=True))
-                            if args.file == 'True':
-                                if os.path.exists('output') is False:
-                                    os.mkdir('output')
-                                filename = threat['id']
-                                file = open('output/{}'.format(filename), 'w')
-                                file.write(json.dumps(threat))
-                                file.close()
+                                    if syslog_ip and syslog_port:
+                                        syslog.info(json.dumps(threat, sort_keys=True))
+                                        logger.info('Successfully send data to Syslog IP {}'.format(syslog_ip))
+
+                                    if threat_log == 'True':
+                                        if os.path.exists(threat_dir) is False:
+                                            os.mkdir(threat_dir)
+
+                                        time_detect = detection['firstDetected']
+                                        ptime_detect = datetime.strptime(time_detect, '%Y-%m-%dT%H:%M:%SZ')
+                                        filename = '{}-{}.log'.format(ptime_detect.strftime('%Y%m%d%H%M%S'), threat['name'])
+                                        file = open('{}/{}'.format(threat_dir, filename), 'w')
+                                        file.write(json.dumps(threat))
+                                        file.close()
+
+                                    tdetect += 1
+                                    ddetect_count += 1
+
+                            logger.debug('For threat {0} identified {1} new detections.'.format(threat['name'], ddetect_count))
+                            tthreat += 1
+
+                    else:
+                        logger.debug('No new threats identified. Exiting. {0}'.format(res))
 
                 else:
-                    self.logger.info('No new threats identified. Exiting. {0}'.format(res))
-                    exit()
-            else:
-                self.logger.error('Error in edr.get_threats(). Error: {0} - {1}'
-                                  .format(str(res.status_code), res.text))
-                exit()
+                    logger.error('Error in retrieving edr.get_threats(). Request url: {}'.format(res.url))
+                    logger.error('Error in retrieving edr.get_threats(). Request headers: {}'.format(res.request.headers))
+                    logger.error('Error in retrieving edr.get_threats(). Request body: {}'.format(res.request.body))
+                    raise Exception('Error in retrieving edr.get_threats(). Error: {0} - {1}'.format(str(res.status_code), res.text))
+
+            logger.debug('Pulled total {0} Threats and {1} Detections.'.format(tthreat, tdetect))
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
-                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
-                                      line_no=exc_tb.tb_lineno, error=str(error)))
+            logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                         .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                 line_no=exc_tb.tb_lineno, error=str(error)))
+            raise
 
-    def get_detections(self, threatId):
+    def get_affected_hosts(self, threatId):
         try:
-            last_detected = datetime.strptime(self.last_check, self.pattern)
+            skip = 0
+            anextflag = True
+            affhosts = []
 
-            res = self.session.get('https://api.' + self.base_url + '/ft/api/v2/ft/threats/{0}/detections'
-                                   .format(threatId))
+            while(anextflag):
 
-            self.logger.debug('request url: {}'.format(res.url))
-            self.logger.debug('request headers: {}'.format(res.request.headers))
-            self.logger.debug('request body: {}'.format(res.request.body))
+                res = self.session.get(
+                    'https://api.{0}/ft/api/v2/ft/threats/{1}/affectedhosts?sort=-rank&from={2}&limit={3}&skip={4}'
+                        .format(self.base_url, threatId, self.epoch_pull, self.limit, skip))
 
-            if res.ok:
-                detections = []
-                for detection in res.json()['detections']:
-                    first_detected = datetime.strptime(detection['firstDetected'], '%Y-%m-%dT%H:%M:%SZ')
+                if res.ok:
+                    res = res.json()
+                    if int(res['skipped']) + int(res['items']) == int(res['total']):
+                        anextflag = False
+                    else:
+                        skip = int(res['skipped']) + int(res['items'])
 
-                    if first_detected >= last_detected:
-                        detections.append(detection)
+                    if len(affhosts) == 0:
+                        affhosts = res['affectedHosts']
+                    else:
+                        for affhost in res['affectedHosts']:
+                            affhosts.append(affhost)
 
-                return detections
-            else:
-                self.logger.error('Error in retrieving edr.get_detections(). Error: {0} - {1}'
-                                  .format(str(res.status_code), res.text))
-                exit()
+                else:
+                    logger.error('Error in retrieving edr.get_affectedHosts(). Request url: {}'.format(res.url))
+                    logger.error('Error in retrieving edr.get_affectedHosts(). Request headers: {}'.format(res.request.headers))
+                    logger.error('Error in retrieving edr.get_affectedHosts(). Request body: {}'.format(res.request.body))
+                    raise Exception('Error in retrieving edr.get_affectedHosts(). Error: {0} - {1}'.format(str(res.status_code), res.text))
+
+            return affhosts
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
-                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
-                                      line_no=exc_tb.tb_lineno, error=str(error)))
+            logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                         .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                 line_no=exc_tb.tb_lineno, error=str(error)))
+            raise
 
-    def get_trace(self, maGuid, traceId):
+    def get_detections(self, threatId, affhost):
         try:
-            res = self.session.get('https://api.' + self.base_url +
-                                   '/historical/api/v1/traces/main-activity-by-trace-id?maGuid={0}&traceId={1}'
-                                   .format(maGuid, traceId))
+            skip = 0
+            dnextflag = True
+            detections = []
 
-            self.logger.debug('request url: {}'.format(res.url))
-            self.logger.debug('request headers: {}'.format(res.request.headers))
-            self.logger.debug('request body: {}'.format(res.request.body))
+            while(dnextflag):
+                filter = {
+                    'affectedHostId': affhost
+                }
 
-            if res.ok:
-                return res.json()
-            else:
-                return {}
+                res = self.session.get(
+                    'https://api.{0}/ft/api/v2/ft/threats/{1}/detections?sort=-rank&from={2}&filter={3}&limit={4}&skip={5}'
+                        .format(self.base_url, threatId, self.epoch_pull, json.dumps(filter), self.limit, skip))
+
+                if res.ok:
+                    res = res.json()
+                    if int(res['skipped']) + int(res['items']) == int(res['total']):
+                        dnextflag = False
+                    else:
+                        skip = int(res['skipped']) + int(res['items'])
+
+                    if len(detections) == 0:
+                        detections = res['detections']
+                    else:
+                        for detection in res['detections']:
+                            detections.append(detection)
+                else:
+                    logger.error('Error in retrieving edr.get_detections(). Request url: {}'.format(res.url))
+                    logger.error('Error in retrieving edr.get_detections(). Request headers: {}'.format(res.request.headers))
+                    logger.error('Error in retrieving edr.get_detections(). Request body: {}'.format(res.request.body))
+                    raise Exception('Error in retrieving edr.get_detections(). Error: {0} - {1}'.format(str(res.status_code), res.text))
+
+            return detections
 
         except Exception as error:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            self.logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
-                              .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
-                                      line_no=exc_tb.tb_lineno, error=str(error)))
+            logger.error("Error in {location}.{funct_name}() - line {line_no} : {error}"
+                         .format(location=__name__, funct_name=sys._getframe().f_code.co_name,
+                                 line_no=exc_tb.tb_lineno, error=str(error)))
+            raise
 
 
 if __name__ == '__main__':
-    usage = """python mvision_edr_threats.py -R <REGION> -C <CLIENT_ID> -S <CLIENT_SECRET> -LL <LOG_LEVEL> -F <FILE WRITE> -SI <SYSLOG IP> -SP <SYSLOG PORT>"""
-    title = 'MVISION EDR Python API'
-    parser = ArgumentParser(description=title, usage=usage, formatter_class=RawTextHelpFormatter)
+    edr_region = os.getenv('EDR_REGION')
+    edr_client_id = os.getenv('EDR_CLIENT_ID')
+    edr_client_secret = os.getenv('EDR_CLIENT_SECRET')
 
-    parser.add_argument('--region', '-R',
-                        required=True, type=str,
-                        help='MVISION EDR Tenant Location', choices=['EU', 'US-W', 'US-E', 'SY', 'GOV'])
+    interval = os.getenv('INTERVAL')
+    initial_pull = os.getenv('INITIAL_PULL')
 
-    parser.add_argument('--client_id', '-C',
-                        required=True, type=str,
-                        help='MVISION EDR Client ID')
+    syslog_ip = os.getenv('SYSLOG_IP')
+    syslog_port = os.getenv('SYSLOG_PORT')
 
-    parser.add_argument('--client_secret', '-S',
-                        required=False, type=str,
-                        help='MVISION EDR Client Secret')
+    proxy = os.getenv('PROXY')
+    valid = os.getenv('VALID')
 
-    parser.add_argument('--trace', '-T',
-                        required=False, type=str, choices=['True', 'False'], default='False',
-                        help='EXPERIMENTAL: Enrich threat information with trace data')
+    cache_dir = os.getenv('CACHE_DIR')
 
-    parser.add_argument('--loglevel', '-LL',
-                        required=False, type=str, choices=['INFO', 'DEBUG'], default='INFO',
-                        help='Set Log Level')
+    log_level = os.getenv('LOG_LEVEL')
+    log_dir = os.getenv('LOG_DIR')
 
-    parser.add_argument('--proxy', '-P',
-                        required=False, type=str, choices=['True', 'False'], default='False',
-                        help='Provide Proxy JSON in line 39')
+    threat_log = os.getenv('THREAT_LOG')
+    threat_dir = os.getenv('THREAT_DIR')
 
-    parser.add_argument('--file', '-F',
-                        required=False, type=str, choices=['True', 'False'], default='False',
-                        help='Option to write Threat Events to files')
+    # setup logging
+    logger = logging.getLogger('mvedr_logger')
+    logger.setLevel(log_level)
+    formatter = logging.Formatter("%(asctime)s;%(levelname)s;%(message)s")
 
-    parser.add_argument('--syslog-ip', '-SI',
-                        required=False, type=str,
-                        help='Syslog IP Address')
+    # setup the console logger
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-    parser.add_argument('--syslog-port', '-SP',
-                        required=False, type=int,
-                        help='Syslog Port')
+    # setup the file logger
+    if os.path.exists(log_dir) is False:
+        os.mkdir(log_dir)
 
-    args = parser.parse_args()
-    if not args.client_secret:
-        args.client_secret = getpass.getpass(prompt='MVISION EDR Client Secret: ')
+    file_handler = logging.handlers.RotatingFileHandler('{0}/mvedr_logger.log'.format(log_dir), maxBytes=25000000,
+                                                        backupCount=5)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-    edr = EDR()
-    edr.get_threats()
+    if syslog_ip and syslog_port:
+        syslog = logging.getLogger('syslog')
+        syslog.setLevel(log_level)
+        syslog.addHandler(SysLogHandler(address=(syslog_ip, int(syslog_port))))
+
+    while True:
+        try:
+            edr = EDR()
+            edr.get_threats()
+            edr.session.close()
+            time.sleep(int(interval))
+        except Exception:
+            time.sleep(60)
