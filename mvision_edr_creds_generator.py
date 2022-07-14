@@ -44,7 +44,7 @@ class EDR():
         try:
             iam_url = 'https://{0}/registration'.format(self.base_url)
             payload = {
-                'registration_token': JO3RSaTC
+                'registration_token': ZaYQdiTz
             }
 
             res = self.request.post(iam_url, data=payload)
