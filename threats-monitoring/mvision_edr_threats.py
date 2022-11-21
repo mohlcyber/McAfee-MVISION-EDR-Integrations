@@ -22,13 +22,13 @@ class EDR():
     def __init__(self):
         self.iam_url = 'iam.mcafee-cloud.com/iam/v1.1'
         if edr_region == 'EU':
-            self.base_url = 'soc.eu-central-1.mcafee.com'
+            self.base_url = 'soc.eu-central-1.trellix.com'
         elif edr_region == 'US-W':
-            self.base_url = 'soc.mcafee.com'
+            self.base_url = 'soc.trellix.com'
         elif edr_region == 'US-E':
-            self.base_url = 'soc.us-east-1.mcafee.com'
+            self.base_url = 'soc.us-east-1.trellix.com'
         elif edr_region == 'SY':
-            self.base_url = 'soc.ap-southeast-2.mcafee.com'
+            self.base_url = 'soc.ap-southeast-2.trellix.com'
         elif edr_region == 'GOV':
             self.base_url = 'soc.mcafee-gov.com'
 
